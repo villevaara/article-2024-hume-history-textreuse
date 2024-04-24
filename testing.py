@@ -30,6 +30,36 @@ def get_text_for_id(text_id, cur):
     return res[0][0]
 
 
+def get_tr_pairs_for_ecco_id_df(ecco_id, cur):
+    query_str = " ".join([
+        "SELECT",
+        # "dst_trs_id as target_trs_id,",
+        "dst_trs_start as target_start,",
+        "dst_trs_end as target_end,",
+        # "src_trs_id,",
+        "src_trs_start,",
+        "src_trs_end,",
+        "src_ti.manifestation_id as src_manifestation_id,",
+        "src_ei.edition_id as src_edition_id,",
+        "src_mpd.publication_date as src_publication_date,",
+        "src_mt.title as src_title",
+        "FROM reception_edges_between_books_denorm",
+        "INNER JOIN textreuse_ids target_ti ON target_ti.trs_id = dst_trs_id",
+        "INNER JOIN textreuse_ids src_ti ON src_ti.trs_id = src_trs_id",
+        "INNER JOIN manifestation_ids src_mi ON src_mi.manifestation_id = src_ti.manifestation_id",
+        "INNER JOIN manifestation_publication_date src_mpd ON src_mi.manifestation_id_i = src_mpd.manifestation_id_i",
+        "INNER JOIN manifestation_title src_mt ON src_mt.manifestation_id_i = src_mi.manifestation_id_i",
+        "INNER JOIN edition_mapping src_em ON src_em.manifestation_id_i = src_mi.manifestation_id_i",
+        "INNER JOIN edition_ids src_ei ON src_ei.edition_id_i = src_em.edition_id_i",
+        "INNER JOIN edition_authors src_ea ON src_ea.edition_id_i = src_em.edition_id_i",
+        "LEFT JOIN actor_ids src_ai ON src_ai.actor_id_i = src_ea.actor_id_i",
+        'WHERE target_ti.manifestation_id = "' + ecco_id + '"'])
+    cur.execute(query_str)
+    res = pd.DataFrame(cur, columns=['dst_start', 'dst_end', 'src_start', 'src_end', 'src_ecco_id', 'src_estc_id',
+                                     'src_pub_date', 'src_title'])
+    return res
+
+
 try:
     conn = mariadb.connect(
         user="sds-root",
@@ -61,64 +91,13 @@ hume_hoe_titles = hume_titles[hume_titles.ecco_full_title.str.lower().str.contai
                               hume_titles.ecco_full_title.str.lower().str.contains("great britain"))]
 
 
-def get_tr_pairs_for_ecco_id_df(ecco_id, cur):
-    query_str = " ".join([
-        "SELECT",
-        # "dst_trs_id as target_trs_id,",
-        "dst_trs_start as target_start,",
-        "dst_trs_end as target_end,",
-        # "src_trs_id,",
-        "src_trs_start,",
-        "src_trs_end,",
-        "src_ti.manifestation_id as src_manifestation_id,",
-        "src_ei.edition_id as src_edition_id,",
-        "src_mpd.publication_date as src_publication_date,",
-        "src_mt.title as src_title",
-        "FROM reception_edges_between_books_denorm",
-        "INNER JOIN textreuse_ids target_ti ON target_ti.trs_id = dst_trs_id",
-        "INNER JOIN textreuse_ids src_ti ON src_ti.trs_id = src_trs_id",
-        "INNER JOIN manifestation_ids src_mi ON src_mi.manifestation_id = src_ti.manifestation_id",
-        "INNER JOIN manifestation_publication_date src_mpd ON src_mi.manifestation_id_i = src_mpd.manifestation_id_i",
-        "INNER JOIN manifestation_title src_mt ON src_mt.manifestation_id_i = src_mi.manifestation_id_i",
-        "INNER JOIN edition_mapping src_em ON src_em.manifestation_id_i = src_mi.manifestation_id_i",
-        "INNER JOIN edition_ids src_ei ON src_ei.edition_id_i = src_em.edition_id_i",
-        "INNER JOIN edition_authors src_ea ON src_ea.edition_id_i = src_em.edition_id_i",
-        "LEFT JOIN actor_ids src_ai ON src_ai.actor_id_i = src_ea.actor_id_i",
-        'WHERE target_ti.manifestation_id = "' + ecco_id + '"'])
-    cur.execute(query_str)
-    res = pd.DataFrame(cur, columns=['dst_start', 'dst_end', 'src_start', 'src_end', 'src_ecco_id', 'src_estc_id',
-                                     'src_pub_date', 'src_title'])
-    return res
-
-
-testres = get_tr_pairs_for_ecco_id_df("0145000201", cur)
-
-
-def get_tr_pairs_for_ecco_id_simple(ecco_id, cur):
-    query_str = " ".join([
-        "SELECT",
-        # "dst_trs_id as target_trs_id,",
-        "dst_trs_start as target_start,",
-        "dst_trs_end as target_end,",
-        "src_ti.manifestation_id as src_manifestation_id",
-        "FROM reception_edges_between_books_denorm",
-        "INNER JOIN textreuse_ids target_ti ON target_ti.trs_id = dst_trs_id",  # !
-        "INNER JOIN textreuse_ids src_ti ON src_ti.trs_id = src_trs_id",  # !
-        "INNER JOIN manifestation_ids src_mi ON src_mi.manifestation_id = src_ti.manifestation_id",  # !
-        'WHERE target_ti.manifestation_id = "' + ecco_id + '"'])
-    cur.execute(query_str)
-    res = list()
-    for item in cur:
-        res.append({
-            'dst_start': item[0],
-            'dst_end': item[1],
-            'src_id': item[2]
-        })
-    return res
+# testres = get_tr_pairs_for_ecco_id_df("0145000201", cur)
 
 
 ecco_id = "0145000201"
-testres2 = get_tr_pairs_for_ecco_id_simple(ecco_id=ecco_id, cur=cur)
+testres2 = get_sources_and_indices_for_eccoid(ecco_id=ecco_id, cur=cur)
+
+
 
 with open('testout.txt', 'w') as outf:
     outf.writelines(list(set([row['src_id'] + '\n' for row in testres2])))
