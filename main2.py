@@ -405,6 +405,11 @@ def read_actor_labels(author_labels_path):
     return retdict
 
 
+def read_json_results(jsonfile):
+    thisdata = json.load(open(jsonfile, 'r'))
+    return thisdata
+
+
 # todo: add login credentials in different file
 cur = get_db_cursor()
 
@@ -413,27 +418,31 @@ rider_actor_id = "66343310" # William Rider needs to be filtered for separately,
 hume_actor_id = '49226972'  # David Hume
 # the volumes are in order I-VI
 hume_vols = ['0162900301', '0162900302', '0429000101', '0429000102', '0156400400', '0162200200']
-hume_coverage = get_source_coverage_for_multivol(hume_vols, [hume_actor_id, rider_actor_id], cur)
-write_json_results(hume_coverage, 'data/results/hume_coverage.json')
+# hume_coverage = get_source_coverage_for_multivol(hume_vols, [hume_actor_id, rider_actor_id], cur)
+# write_json_results(hume_coverage, 'data/results/hume_coverage.json')
+hume_coverage = read_json_results('data/results/hume_coverage.json')
 
 rapin_actor_id = "59111095"
 # The volumes are in order 1-15
 rapin_vols = ['1393700101', '1393700102', '1393700103', '1393800104', '1393800105',
               '1393800106', '1393900107', '1393900108', '1393900109', '1394000110',
               '1394000111', '1394000112', '1394100113', '1394100114', '1394100115']
-
-rapin_coverage = get_source_coverage_for_multivol(rapin_vols, [rapin_actor_id], cur)
-write_json_results(rapin_coverage, 'data/results/rapin_coverage.json')
+# rapin_coverage = get_source_coverage_for_multivol(rapin_vols, [rapin_actor_id], cur)
+# write_json_results(rapin_coverage, 'data/results/rapin_coverage.json')
+rapin_coverage = read_json_results('data/results/rapin_coverage.json')
 
 carte_actor_id = "34794161"
 carte_vols = ["0018400101", "0018400102", "0018500103", "0018500104"]
-carte_coverage = get_source_coverage_for_multivol(carte_vols, [carte_actor_id], cur)
-write_json_results(carte_coverage, 'data/results/carte_coverage.json')
+# carte_coverage = get_source_coverage_for_multivol(carte_vols, [carte_actor_id], cur)
+# write_json_results(carte_coverage, 'data/results/carte_coverage.json')
+carte_coverage = read_json_results('data/results/carte_coverage.json')
 
 guthrie_actor_id = "100194070"
 guthrie_vols = ["1679000101", "1679100103", "1679100104"]
-guthrie_coverage = get_source_coverage_for_multivol(guthrie_vols, [guthrie_actor_id], cur)
-write_json_results(guthrie_coverage, 'data/results/guthrie_coverage.json')
+# guthrie_coverage = get_source_coverage_for_multivol(guthrie_vols, [guthrie_actor_id], cur)
+# write_json_results(guthrie_coverage, 'data/results/guthrie_coverage.json')
+guthrie_coverage = read_json_results('data/results/guthrie_coverage.json')
+
 
 volume_lengths = dict()
 for vol_list in rapin_vols, hume_vols, carte_vols, guthrie_vols:
@@ -446,6 +455,7 @@ plot1_data = pd.DataFrame([{'author': 'Hume', 'reuse ratio': hume_coverage['tota
               {'author': 'Rapin', 'reuse ratio': rapin_coverage['total_ratio']},
               {'author': 'Carte', 'reuse ratio': carte_coverage['total_ratio']},
               {'author': 'Guthrie', 'reuse ratio': guthrie_coverage['total_ratio']}])
+plot1_data.to_csv('plots/final/figure1_data.csv', index=False)
 
 sns.barplot(plot1_data, x='author', y='reuse ratio')
 plt.savefig('plots/plot1.png')
@@ -482,6 +492,7 @@ plots2_to_5_data = pd.DataFrame([
     {'author': 'Guthrie', 'volume': '3', 'reuse ratio': guthrie_coverage['1679100103']['relative']},
     {'author': 'Guthrie', 'volume': '4', 'reuse ratio': guthrie_coverage['1679100104']['relative']},
 ])
+plots2_to_5_data.to_csv('plots/final/figure2_data.csv', index=False)
 
 f, axes = plt.subplots(nrows=2, ncols=2, sharey=True, figsize=(8,8))
 
@@ -495,12 +506,12 @@ plt.clf()
 plt.close('all')
 
 
-for author in ['Hume', 'Rapin', 'Guthrie', 'Carte']:
-    sns.barplot(plots2_to_5_data[plots2_to_5_data['author'] == author], x='volume', y='reuse ratio').set(
-        title=author)
-    # plt.savefig('plots/plot_reuse_ratio_' + author + '.png')
-    # plt.close('all')
-
+# for author in ['Hume', 'Rapin', 'Guthrie', 'Carte']:
+#     sns.barplot(plots2_to_5_data[plots2_to_5_data['author'] == author], x='volume', y='reuse ratio').set(
+#         title=author)
+#     # plt.savefig('plots/plot_reuse_ratio_' + author + '.png')
+#     # plt.close('all')
+#
 
 hume_actor_coverages = dict()
 for hume_vol in tqdm(hume_vols):
@@ -528,7 +539,6 @@ def get_actor_broad_label(actor_id, actor_labels):
         return 'other'
     else:
         return actor_labels[actor_id]['broad_faction']
-
 
 
 def get_faction_coverage(actor_coverage, actor_labels, discount_anonymous=False):
@@ -568,6 +578,8 @@ plotdata6_avg_neutral = plotdata6_avg_neutral[plotdata6_avg_neutral.faction == '
 plotdata6_avg_neutral['proportion_factions_including_neutral'].mean()
 
 # plotdata6.plot(kind='bar', stacked=True, color=['blue', 'red'])
+
+plotdata6.to_csv('plots/final/figure3_data.csv', index=False)
 
 sns.histplot(
     data=plotdata6,
@@ -654,13 +666,12 @@ plotdata7 = actordata_raw_reuses[actordata_raw_reuses['actor_id'].notnull()]
 plotdata7 = plotdata7.sort_values('combined_length', ascending=False).head(20)
 
 sns.barplot(plotdata7, x='name_unified', y='pages_estimate', hue='faction')
+
 plt.savefig('plots/plot7.png')
 plt.close('all')
 
 tabledata_1 = actordata_raw_reuses[['actor_id', 'combined_length', 'pages_estimate', 'name_unified', 'faction', 'share']]
 tabledata_1.to_csv('tables/tabledata_1.csv', index=False)
-
-
 
 
 # Check reuses fragment by fragment.
@@ -770,7 +781,7 @@ def get_actor_data_per_header(ecco_id, offset_data, filter_actors, cur):
     #
     # get fragments grouped by header:
     for fragment in vol_fragments_grouped:
-        frag_header = get_header_for_char_index(this_headers_data, fragment['start'])
+        frag_header = get_header_for_char_index(char_index=fragment['start'], headers_data=this_headers_data)
         header_fragments[frag_header['header_index']]['fragments'].append(fragment)
     # get book part lengths
     #
@@ -880,7 +891,7 @@ vol6_parts_df['volume'] = 6
 hume_vols_df = pd.concat([vol5_parts_df, vol6_parts_df], ignore_index=True)
 hume_vols_df.reset_index(inplace=True)
 hume_vols_df['header_text_short'] = hume_vols_df['header_text'].str.split('\\n\\n# ').str[-1].str.split('THE HISTORY OF GREAT BRITAIN. ').str[-1].str[:50] + " […]"
-
+hume_vols_df.to_csv('plots/final/figure4_data.csv', index=False)
 
 f, ax = plt.subplots(figsize=(5, 14))
 sns.barplot(hume_vols_df, x='total_coverage_proportional',
@@ -899,6 +910,7 @@ hume_actor_header_data_vol6_factions_df = hume_actor_header_data_vol6_factions_d
 hume_actor_header_data_vols_factions_df = pd.concat([hume_actor_header_data_vol5_factions_df, hume_actor_header_data_vol6_factions_df], ignore_index=True)
 hume_actor_header_data_vols_factions_df['header_text_short'] = hume_actor_header_data_vols_factions_df['header_text'].str.split('\\n\\n# ').str[-1].str.split('THE HISTORY OF GREAT BRITAIN. ').str[-1].str[:50] + " […]"
 hume_actor_header_data_vols_factions_df_plotdata = hume_actor_header_data_vols_factions_df[hume_actor_header_data_vols_factions_df['faction'] != 'other']
+hume_actor_header_data_vols_factions_df_plotdata.to_csv('plots/final/figure5_data.csv', index=False)
 
 f, ax = plt.subplots(figsize=(5, 14))
 sns.histplot(data=hume_actor_header_data_vols_factions_df_plotdata,
@@ -958,6 +970,7 @@ rapin_vol12_factions_df = rapin_vol12_factions_df.iloc[6:36]
 rapin_vols_factions_df = pd.concat([rapin_vol11_factions_df, rapin_vol12_factions_df], ignore_index=True)
 rapin_vols_factions_df['header_text_short'] = rapin_vols_factions_df['header_text'].apply(get_shortened_header_text, max_length=50)
 rapin_vols_factions_df_plotdata = rapin_vols_factions_df[rapin_vols_factions_df['faction'] != 'other']
+rapin_vols_factions_df_plotdata.to_csv('plots/final/figure6_data.csv', index=False)
 
 f, ax = plt.subplots(figsize=(5, 14))
 sns.barplot(rapin_vols_factions_df_plotdata, x='percentage_of_part_length',
@@ -1013,7 +1026,7 @@ guth_factions_vol4_df = pd.DataFrame(get_political_faction_summaries_to_header_d
 guth_factions_vol4_df = guth_factions_vol4_df.iloc[0:15]
 guth_factions_vol4_df['header_text_short'] = guth_factions_vol4_df['header_text'].apply(get_shortened_header_text, max_length=50)
 guth_factions_vol4_df_plotdata = guth_factions_vol4_df[guth_factions_vol4_df['faction'] != 'other']
-
+guth_factions_vol4_df_plotdata.to_csv('plots/final/figure7_data.csv', index=False)
 
 f, ax = plt.subplots(figsize=(5, 4))
 sns.barplot(guth_factions_vol4_df_plotdata, x='percentage_of_part_length',
@@ -1038,7 +1051,7 @@ carte_factions_vol4_df = pd.DataFrame(get_political_faction_summaries_to_header_
 carte_factions_vol4_df = carte_factions_vol4_df.iloc[0:12]
 carte_factions_vol4_df['header_text_short'] = carte_factions_vol4_df['header_text'].apply(get_shortened_header_text, max_length=50)
 carte_factions_vol4_df_plotdata = carte_factions_vol4_df[guth_factions_vol4_df['faction'] != 'other']
-
+carte_factions_vol4_df_plotdata.to_csv('plots/final/figure8_data.csv', index=False)
 
 f, ax = plt.subplots(figsize=(5, 4))
 sns.barplot(carte_factions_vol4_df_plotdata, x='percentage_of_part_length',
@@ -1150,18 +1163,25 @@ hum_frag5_auth_by_chapter_top_merged = pd.concat([hum_frag5_auth_by_chapter_top,
 hum_frag5_auth_by_chapter_top_merged['pages'] = hum_frag5_auth_by_chapter_top_merged['fragment_length'] / hume_avg_char_per_page
 hum_frag5_auth_by_chapter_top_merged['header_text_short'] = hum_frag5_auth_by_chapter_top_merged['header_text'].apply(get_shortened_header_text, max_length=50)
 hum_frag5_auth_by_chapter_top_merged.sort_values(by='header_index', inplace=True)
+hum_frag5_auth_by_chapter_top_merged.to_csv('plots/final/figure9_data.csv', index=False)
 
 f, ax = plt.subplots(figsize=(10, 10))
 hue_order = list(hum_frag5_top_authors['author_name'])
 hue_order.sort()
 hue_order.insert(0, 'Others')
-sns.histplot(data=hum_frag5_auth_by_chapter_top_merged,
+thisplot = sns.histplot(data=hum_frag5_auth_by_chapter_top_merged,
              y='header_text_short', hue='author_name',
              multiple='stack', discrete=True, shrink=.8,
              weights=hum_frag5_auth_by_chapter_top_merged.pages,
              palette=sns.color_palette("Paired"),
              hue_order=hue_order)
 ax.set_xlabel("Pages")
+
+hatches = ['-', '+', '/', '\\', 'x', '*', 'o', 'O', '.', 'OO', '++', '--']
+for i,thisbar in enumerate(thisplot.patches):
+    # Set a different hatch for each bar
+    thisbar.set_hatch(hatches[i])
+
 plt.savefig('plots/hume_vol5_top10_authors_stacked.png', bbox_inches='tight')
 plt.clf()
 plt.close('all')
