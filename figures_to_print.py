@@ -8,6 +8,25 @@ from  matplotlib.ticker import PercentFormatter
 from PIL import Image
 
 
+def get_shortened_header_text(text, max_length):
+    text = text.split('\\n\\n# ')[-1].split('THE HISTORY OF GREAT BRITAIN.')[-1]
+    text = " ".join(text.replace('\n\n#', '').replace('.', '. ').split())
+    text = text.replace('parlilament', 'parliament')
+    if len(text) <= max_length:
+        return text
+    else:
+        nt_split = text.split()
+        nt_limited = ""
+        for i in range(0, len(nt_split)):
+            nt_limited += nt_split[i] + " "
+            if len(nt_limited.strip()) > max_length:
+                nt_limited = " ".join(nt_split[0:i])
+                nt_limited = nt_limited.strip(' -')
+                break
+        nt_limited = nt_limited + " […]"
+        return nt_limited
+
+
 def save_image_in_all_formats(thisplot, figname, tight=False):
     if tight:
         thisplot.savefig('plots/final/' + figname + '.png', bbox_inches='tight')
@@ -47,18 +66,18 @@ save_image_in_all_formats(plt, 'figure1')
 figure2_data = pd.read_csv('plots/final/figure2_data.csv')
 
 f, axes = plt.subplots(nrows=2, ncols=2, sharey=True, figsize=(8,8))
-sns.barplot(figure2_data[figure2_data['author'] == 'Hume'], x='volume', y='reuse ratio', ax=axes[0,0]).set(title='Hume')
-sns.barplot(figure2_data[figure2_data['author'] == 'Rapin'], x='volume', y='reuse ratio', ax=axes[0,1]).set(title='Rapin')
-sns.barplot(figure2_data[figure2_data['author'] == 'Guthrie'], x='volume', y='reuse ratio', ax=axes[1,0]).set(title='Guthrie')
-sns.barplot(figure2_data[figure2_data['author'] == 'Carte'], x='volume', y='reuse ratio', ax=axes[1,1]).set(title='Carte')
+sns.barplot(figure2_data[figure2_data['author'] == 'Hume'], x='volume', y='reuse ratio', ax=axes[0,0]).set(title='Hume', xlabel=None, ylim=(0, 0.6), ylabel='Reuse ratio')
+sns.barplot(figure2_data[figure2_data['author'] == 'Rapin'], x='volume', y='reuse ratio', ax=axes[0,1]).set(title='Rapin', xlabel=None, ylim=(0, 0.6), ylabel='Reuse ratio')
+sns.barplot(figure2_data[figure2_data['author'] == 'Guthrie'], x='volume', y='reuse ratio', ax=axes[1,0]).set(title='Guthrie', ylim=(0, 0.6), ylabel='Reuse ratio', xlabel='Volume')
+sns.barplot(figure2_data[figure2_data['author'] == 'Carte'], x='volume', y='reuse ratio', ax=axes[1,1]).set(title='Carte', ylim=(0, 0.6), ylabel='Reuse ratio', xlabel='Volume')
 
 for ax in axes.flat:
-    ax.set(xlabel='Volume', ylabel='Reuse ratio', ylim=(0, 0.6))
+    # ax.set(xlabel='Volume', ylabel='Reuse ratio', ylim=(0, 0.6))
     ax.yaxis.set_major_formatter(PercentFormatter(1, decimals=0))
 
 # Hide x labels and tick labels for top plots and y ticks for right plots.
-for ax in axes.flat:
-    ax.label_outer()
+# for ax in axes.flat:
+#     ax.label_outer()
 
 plt.tight_layout()
 save_image_in_all_formats(plt, 'figure2')
@@ -86,6 +105,7 @@ save_image_in_all_formats(plt, 'figure3')
 # Figure 4.
 
 figure4_data = pd.read_csv('plots/final/figure4_data.csv')
+figure4_data['header_text_short'] = figure4_data['header_text'].apply(get_shortened_header_text, max_length=50)
 
 f, ax = plt.subplots(figsize=(5, 14))
 sns.barplot(figure4_data, x='total_coverage_proportional',
@@ -104,6 +124,7 @@ save_image_in_all_formats(plt, 'figure4', tight=True)
 
 figure5_data = pd.read_csv('plots/final/figure5_data.csv')
 figure5_data['faction'] = figure5_data['faction'].str.capitalize()
+figure5_data['header_text_short'] = figure5_data['header_text'].apply(get_shortened_header_text, max_length=50)
 
 f, ax = plt.subplots(figsize=(5, 14))
 sns.barplot(figure5_data, x='percentage_of_part_length',
@@ -122,6 +143,7 @@ save_image_in_all_formats(plt, 'figure5', tight=True)
 
 figure6_data = pd.read_csv('plots/final/figure6_data.csv')
 figure6_data['faction'] = figure6_data['faction'].str.capitalize()
+figure6_data['header_text_short'] = figure6_data['header_text'].apply(get_shortened_header_text, max_length=50)
 
 f, ax = plt.subplots(figsize=(5, 14))
 sns.barplot(figure6_data, x='percentage_of_part_length',
@@ -140,6 +162,7 @@ save_image_in_all_formats(plt, 'figure6', tight=True)
 
 figure7_data = pd.read_csv('plots/final/figure7_data.csv')
 figure7_data['faction'] = figure7_data['faction'].str.capitalize()
+figure7_data['header_text_short'] = figure7_data['header_text'].apply(get_shortened_header_text, max_length=50)
 
 f, ax = plt.subplots(figsize=(5, 4))
 sns.barplot(figure7_data, x='percentage_of_part_length',
@@ -157,6 +180,7 @@ save_image_in_all_formats(plt, 'figure7', tight=True)
 
 figure8_data = pd.read_csv('plots/final/figure8_data.csv')
 figure8_data['faction'] = figure8_data['faction'].str.capitalize()
+figure8_data['header_text_short'] = figure8_data['header_text'].apply(get_shortened_header_text, max_length=50)
 
 f, ax = plt.subplots(figsize=(5, 4))
 sns.barplot(figure8_data, x='percentage_of_part_length',
@@ -174,6 +198,7 @@ save_image_in_all_formats(plt, 'figure8', tight=True)
 
 figure9_data = pd.read_csv('plots/final/figure9_data.csv')
 figure9_data.sort_values('author_id', na_position='first', inplace=True)
+figure9_data['header_text_short'] = figure9_data['header_text'].apply(get_shortened_header_text, max_length=50)
 
 f, ax = plt.subplots(figsize=(10, 10))
 sns.histplot(data=figure9_data,
